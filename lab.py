@@ -31,18 +31,18 @@ class NetkitLab:
             str = machines.replace("machines=", "").replace("\"", "")
             return str.split(" ")
 
+    def startLab(self):
+        os.system('cd ' + self.labDirectory + ' && ~/netkit-jh/bin/lstart')
+
+    def stopLab(self):
+        os.system('cd ' + self.labDirectory + ' && ~/netkit-jh/bin/lcrash')
+
+    def probeLab(self):
+        os.system('cd ' + self.labDirectory + ' && ~/netkit-jh/bin/linfo')
+
     # Constructor
     # Create a NetkitLab class based on a selected lab.conf File
     def __init__(self, labConfFilePath):
         self.labDirectory = os.path.dirname(labConfFilePath)
         self.labConf = labConfFilePath
         self.machineList = self.getMachineList()
-
-
-
-
-
-
-
-
-
