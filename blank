@@ -1,0 +1,206 @@
+from tkinter import *
+
+
+def print_hi(name):
+    # Use a breakpoint in the code line below to debug your script.
+    print(f'Hi..., {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+
+
+# Press the green button in the gutter to run the script.
+if __name__ == '__main__':
+    print_hi('PyCharm')
+
+
+#
+# root = Tk()
+
+# topFrame = Frame(root)
+# topFrame.pack()
+
+# midFrame = Frame(root)
+# midFrame.pack()
+
+# bottomFrame = Frame(root)
+# bottomFrame.pack(side=BOTTOM)
+
+# button1 = Button(topFrame, text="Click 1", fg="red")
+# button2 = Button(topFrame, text="Click 2", fg="blue")
+# button3 = Button(topFrame, text="Click 3", fg="green")
+# button4 = Button(bottomFrame, text="Click 4", fg="purple")
+
+# button1.pack(side=LEFT)
+# button2.pack(side=LEFT)
+# button3.pack(side=LEFT)
+# button4.pack()
+
+# one = Label(root, text="Uno", bg="purple", fg="white")
+# one.pack()
+
+# two = Label(root, text="Dos", bg="white", fg="purple")
+# two.pack(fill=X)
+
+# three = Label(root, text="Tres", bg="orange", fg="black")
+# three.pack(side=LEFT, fill=Y)
+
+# lbl1 = Label(root, text="Name")
+# lbl2 = Label(root, text="Password")
+# ent1 = Entry(root)
+# ent2 = Entry(root)
+
+# lbl1.grid(row=0, column=0, sticky=E)
+# lbl2.grid(row=1, column=0, sticky=E)
+
+# ent1.grid(row=0, column=1, sticky=W)
+# ent2.grid(row=1, column=1, sticky=W)
+
+# c = Checkbutton(root, text="Rememebr me?")
+# c.grid(row=2, columnspan=2)
+
+# def Dewit(event):
+#    print("Hello cuck")
+
+# but1 = Button(root, text="Dewit")
+# but1.bind("<Button-1>", Dewit)
+# but1.grid(row=3, columnspan=2)
+
+# def lClick(event):#
+#    print("Left")
+# def mClick(event):
+#    print("Mid")
+# def rClick(event):
+#    print("Right")
+
+# frame = Frame(root, width=300, height=250)
+# frame.bind("<Button-1>", lClick)
+# frame.bind("<Button-2>", mClick)
+# frame.bind("<Button-3>", rClick)
+
+# frame.pack()
+
+# class HexButtons:#
+#
+#    def __init__(self, master):
+#        frame = Frame(master)
+#        frame.pack()#
+
+#        self.printButton = Button(frame, text="Print Hexagons!", command=self.printMessage)
+#        self.printButton.pack(side=LEFT)
+
+#        self.quitButton = Button(frame, text="End me!", command=frame.quit)
+#       self.quitButton.pack(side=LEFT)
+
+#   def printMessage(self):
+#       print("Woah!!")
+
+#def doNatta():
+#    print("Stupid")
+
+
+root = Tk()
+# h = HexButtons(root)
+
+#menux = Menu(root)
+#root.config(menu=menux)
+
+#subMen = Menu(menux)
+#menux.add_cascade(label="File", menu=subMen)
+#subMen.add_command(label="New project", command=doNatta)
+#subMen.add_command(label="Open project", command=doNatta)
+#subMen.add_separator()
+#subMen.add_command(label="Check version", command=doNatta)
+#subMen.add_command(label="Git pull", command=doNatta)
+#subMen.add_separator()
+#subMen.add_command(label="Exit", command=doNatta)
+
+#edMen = Menu(menux)
+#menux.add_cascade(label="edit", menu=edMen)
+#edMen.add_command(label="Do nothing", command=doNatta)
+
+#canvas = Canvas(root, width=1000, height=400)
+#canvas.pack()
+
+#blackline = canvas.create_line(200, 50, 400, 350, fill="black")
+#redline = canvas.create_line(200, 50, 600, 50, fill="red")
+#greenline = canvas.create_line(600, 50, 400, 350, fill="green")
+
+#rect = canvas.create_rectangle(300, 100, 250, 300)
+
+#pic = PhotoImage(file="apic.png")
+#lbl = Label(root, image=pic)
+#lbl.pack()
+
+#canvas.delete(rect)
+
+
+
+root.mainloop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#root = Tk()
+
+# Generics
+#srnW = root.winfo_screenwidth()
+#srnH = root.winfo_screenheight()
+
+#base = Frame(root, width=srnW, height=srnH)
+#base.pack(fill=BOTH, expand=YES)
+#baseid = base.winfo_id()
+
+#tf = Text(base)
+#tf.pack()
+
+# def get_info(a rg):
+#     x = StringVar()
+#     x = tf.get("linestart", "lineend")
+
+# for line in os.popen("ifconfig", "r"):
+#     tf.insert("end", line)
+# tf.bind("<Return>", get_info)
+
+#p = subprocess.Popen(["xterm", "-into", str(baseid), "-geometry", "80x20"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+#wid = base.winfo_id()
+#os.system('xterm -into %d -geometry 60x20 -sb &' % wid)
+
+labdir = r"/home/hex/NetkitLabs/SAND/PMA-Workshop/PMA-Netkit"
+listterms = []
+
+for file in os.listdir(labdir):
+    if file.endswith(".startup"):
+        listterms.append(file.replace(".startup", ""))
+    else:
+        continue
+
+wid = 10
+
+for i in listterms:
+    os.system('xdotool search --name "' + i + '"  windowactivate windowmove -- ' + str(wid) + '  300 windowsize 350 350 type " ping localhost "')
+    for x in range(0, 500, 25):
+        os.system('xdotool search --name "' + i + '"  windowactivate windowsize ' + str(x) + ' ' + str(x) + ' ')
+    os.system('xdotool search --name "' + i + '" windowactivate key Return')
+    wid = wid + 100
+
