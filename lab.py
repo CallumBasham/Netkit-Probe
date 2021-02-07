@@ -4,12 +4,20 @@ import io
 
 
 class MachineData:
+    # Setup a new Machine Object
     def __init__(self, name):
         self.machineName = name
         self.machineConnections = []
 
+    # Append a new connection
     def addConnection(self, ethDev, wireName):
         self.machineConnections.append((ethDev, wireName))
+
+    # Info dump to stdout
+    def printMachineData(self):
+        print("[ " + self.machineName + " ]")
+        for con in self.machineConnections:
+            print("-> connection -> " + con[0] + " - on line - " + con[1])
 
 class NetkitLab:
 
@@ -64,25 +72,29 @@ class NetkitLab:
         return nk
 
 
+    def beginVdumpLab(self):
+        pass
+
     def probeLab(self):
+        # Cleanup any old data
+        self.machineData = []
+
         wid = 10
         for i in self.machineList:
             os.system('xdotool search --name "' + i + '"  windowactivate windowmove -- ' + str(
                 wid) + '  300 windowsize 450 450 type " ping localhost "')
-          #  for x in range(0, 500, 25):
-            #    os.system('xdotool search --name "' + i + '"  windowactivate windowsize ' + str(x) + ' ' + str(x) + ' ')
             os.system('xdotool search --name "' + i + '" windowactivate key Return')
             wid = wid + 100
 
         proc = subprocess.Popen("cd " + self.labDirectory + " && vlist", stdout=subprocess.PIPE, shell=True)
         for line in io.TextIOWrapper(proc.stdout, encoding="utf-8"):
             if "@" in line and len(line) > 5:
+                self.machineData.append(self.getMachineInfo(line))
 
-                newMachine = self.getMachineInfo(line)
+        return self.machineData
 
-
-
-
+    def pinConsoleAtPoint(self, machineName, pointX, pointY):
+        pass
 
     # Constructor
     # Create a NetkitLab class based on a selected lab.conf File
@@ -90,3 +102,4 @@ class NetkitLab:
         self.labDirectory = os.path.dirname(labConfFilePath)
         self.labConf = labConfFilePath
         self.machineList = self.getMachineList()
+        self.machineData = [] # Populated when user probes the Netkit Lab

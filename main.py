@@ -2,6 +2,8 @@ import os
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 from lab import NetkitLab
+import threading
+import time
 
 # Program Variables -->-->-->-->-->-->-->-->-->-->
 
@@ -12,20 +14,23 @@ root.attributes("-zoomed", True)
 root.title("Netkit Probe")
 
 # Base frame -->-->-->-->-->-->-->-->-->-->
-base = Frame(root, width=1000, height=700)
-base.pack()
+base = Frame(root, height=50)
+base.pack(fill=X, expand=True, anchor=N, side=TOP)
+base2 = Frame(root, height=2000)
+base2.pack(fill=BOTH, expand=True, anchor=N, side=TOP)
+
 
 def addLabButtons(nlab):
-    machineList = Label(base, anchor=W)
+    machineList = Label(base, anchor=N)
     machineList.grid(row=1, column=1, columnspan=1)
 
-    startLabBtn = Button(base, text="Start Lab", state=NORMAL, command=lambda: btnStartLab(nlab))
+    startLabBtn = Button(base, text="Start Lab", state=NORMAL, command=lambda: btnStartLab(nlab), anchor=N)
     startLabBtn.grid(row=1, column=2, columnspan=1)
 
-    stopLabBtn = Button(base, text="Stop Lab", state=NORMAL, command=lambda: btnStopLab(nlab))
+    stopLabBtn = Button(base, text="Stop Lab", state=NORMAL, command=lambda: btnStopLab(nlab), anchor=N)
     stopLabBtn.grid(row=1, column=3, columnspan=1)
 
-    probeLabBtn = Button(base, text="Probe Lab", state=NORMAL, command=lambda: btnProbeLab(nlab))
+    probeLabBtn = Button(base, text="Probe Lab", state=NORMAL, command=lambda: btnProbeLab(nlab), anchor=N)
     probeLabBtn.grid(row=1, column=4, columnspan=1)
 
     machineList["text"] = "Machines: " + ' '.join(nlab.machineList)
@@ -40,8 +45,27 @@ def btnStopLab(nlab):
 
 def btnProbeLab(nlab):
     updateStatus(nlab.labDirectory + " Probing...!")
-    nlab.probeLab()
+    drawLab(nlab, nlab.probeLab())
 
+def drawLab(nlab, macineData):
+    labCanvas = Canvas(base2, bg="gray", height=2000)
+    #ee.grid(row=2, columnspan=10, sticky="nsew")
+    labCanvas.pack(fill=BOTH, expand=True, anchor=N, side=TOP)
+
+    aerc = labCanvas.create_line(50, 50, 150, 150, fill="orange", width=4)
+
+    #base.grid_rowconfigure(0, weight=1)
+    #base.grid_columnconfigure(0, weight=1)
+
+    # Thread to keep consoles locked
+    pin = threading.Thread(target=keepNConsolesFixed, args=(nlab, macineData))
+    pin.start()
+
+def keepNConsolesFixed(nlab, machineData):
+    while True:
+        nlab.pinConsoleAtPoint("x", 0, 0)
+        print("Pinned...")
+        time.sleep(1)
 
 # Status bar -->-->-->-->-->-->-->-->-->-->
 status = Label(root, text="Waiting...", bd=1, relief=SUNKEN, anchor=W)
