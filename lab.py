@@ -57,6 +57,7 @@ class NetkitLab:
 
     def getMachineInfo(self, line):
         # Dump list into array and clear spaces
+        line = line.replace("\n", "").replace(",", "")
         lineSplit = line.split(' ')
         lineSplit = list(filter(None, lineSplit))
 
@@ -68,6 +69,8 @@ class NetkitLab:
             if lineSplit[i] == "@":
                 nk.addConnection(lineSplit[i - 1], lineSplit[i + 1])
 
+
+
         # Return the Machine object
         return nk
 
@@ -75,16 +78,19 @@ class NetkitLab:
     def beginVdumpLab(self):
         pass
 
+    def moveLabTerminal(self, termName, x, y):
+        os.system('xdotool search --name "' + termName + '"  windowactivate windowmove -- ' + str(x) + '  ' + str(y) + ' windowsize 100 50')
+
     def probeLab(self):
         # Cleanup any old data
         self.machineData = []
 
-        wid = 10
-        for i in self.machineList:
-            os.system('xdotool search --name "' + i + '"  windowactivate windowmove -- ' + str(
-                wid) + '  300 windowsize 450 450 type " ping localhost "')
-            os.system('xdotool search --name "' + i + '" windowactivate key Return')
-            wid = wid + 100
+        #wid = 10
+        #for i in self.machineList:
+         #   os.system('xdotool search --name "' + i + '"  windowactivate windowmove -- ' + str(
+         #       wid) + '  300 windowsize 450 450 type " ping localhost "')
+         #   os.system('xdotool search --name "' + i + '" windowactivate key Return')
+         #   wid = wid + 100
 
         proc = subprocess.Popen("cd " + self.labDirectory + " && vlist", stdout=subprocess.PIPE, shell=True)
         for line in io.TextIOWrapper(proc.stdout, encoding="utf-8"):

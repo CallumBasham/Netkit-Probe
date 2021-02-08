@@ -4,6 +4,7 @@ from tkinter.filedialog import askopenfilename
 from lab import NetkitLab
 import threading
 import time
+import math
 
 # Program Variables -->-->-->-->-->-->-->-->-->-->
 
@@ -48,14 +49,57 @@ def btnProbeLab(nlab):
     drawLab(nlab, nlab.probeLab())
 
 def drawLab(nlab, macineData):
+    # Create the Canvas for Writing
     labCanvas = Canvas(base2, bg="gray", height=2000)
-    #ee.grid(row=2, columnspan=10, sticky="nsew")
     labCanvas.pack(fill=BOTH, expand=True, anchor=N, side=TOP)
 
-    aerc = labCanvas.create_line(50, 50, 150, 150, fill="orange", width=4)
+    # Get Bounds
+    boundW = base2.winfo_width()
+    boundH = base2.winfo_height()
 
-    #base.grid_rowconfigure(0, weight=1)
-    #base.grid_columnconfigure(0, weight=1)
+    # Get distinct lines
+    distinctLine = []
+    for mach in macineData:
+        for con in mach.machineConnections:
+            if con[1] not in distinctLine:
+                distinctLine.append(con[1])
+
+    # Draw lines onto canvas
+    canvLines = []
+    canvEths = []
+
+    boundW_open = boundW - (boundW / len(distinctLine))
+    lineposXIncri = boundW_open / len(distinctLine)
+    linesDrawn = 1
+    for line in distinctLine:
+        canvLines.append((labCanvas.create_text(linesDrawn * lineposXIncri, boundH / 2, fill="orange", text=line), line))
+
+
+        rotsComp = 0
+        maxrots = 0
+        for mach in macineData:
+            for con in mach.machineConnections:
+                if con[1] == line:
+                    maxrots = maxrots + 1
+
+        for mach in macineData:
+            for con in mach.machineConnections:
+                if con[1] == line:
+
+                    ox, oy = linesDrawn * lineposXIncri, boundH / 2
+                    px, py = linesDrawn * lineposXIncri + 100, (boundH / 2) + 100
+
+                    qx = ox + math.cos( math.radians((360 / maxrots) * rotsComp) ) * (px - ox) - math.sin( math.radians((360 / maxrots) * rotsComp)  ) * (py - oy)
+                    qy = oy + math.sin( math.radians((360 / maxrots) * rotsComp) ) * (px - ox) + math.cos(  math.radians((360 / maxrots) * rotsComp)  ) * (py - oy)
+
+                    ddd = canvEths.append(labCanvas.create_text(qx, qy, fill="yellow", text=con[0]))
+                    labCanvas.create_line(linesDrawn * lineposXIncri, boundH / 2, qx, qy, fill="yellow")
+
+                    nlab.moveLabTerminal(mach.machineName, qx, qy + 50)
+
+                    rotsComp = rotsComp + 1
+
+        linesDrawn = linesDrawn + 1
 
     # Thread to keep consoles locked
     pin = threading.Thread(target=keepNConsolesFixed, args=(nlab, macineData))
