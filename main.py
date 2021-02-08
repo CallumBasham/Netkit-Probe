@@ -145,7 +145,7 @@ def drawLab(nlab, macineData):
             # perhaps  make a two line system, one like the above code and the other using orbit
             # draw lines between the three points
             # find a way to group them to trace traffic
-            # Get netkit sitting on its name perminantly (maybe allow them to move it, but the name remains, when they click it they can redock/see options (like firewall))
+            # Get netkit sitting on its name perminantly (maybe allow them to move it, but the name remains, when they click it they can redock/see o
 
 
 
