@@ -2,6 +2,14 @@ import os
 import subprocess
 import io
 
+class LaneData:
+    def __init__(self, name):
+        self.laneName = name
+        self.laneWeight = 0
+        self.laneMachines = []
+
+
+
 
 class MachineData:
     # Setup a new Machine Object
@@ -18,6 +26,14 @@ class MachineData:
         print("[ " + self.machineName + " ]")
         for con in self.machineConnections:
             print("-> connection -> " + con[0] + " - on line - " + con[1])
+
+    # How many different lanes this machine connets to
+    def getNetworkWeight(self):
+        dist = []
+        for con in self.machineConnections:
+            if con[1] not in dist:
+                dist.append(con[1])
+        return len(dist)
 
 class NetkitLab:
 
