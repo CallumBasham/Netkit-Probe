@@ -7,6 +7,7 @@ class LaneData:
         self.laneName = name
         self.laneWeight = 0
         self.laneMachines = []
+        self.radiansUsed = 1
 
 
 
