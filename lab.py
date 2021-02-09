@@ -127,17 +127,15 @@ class NetkitLab:
             if lineSplit[i] == "@":
                 nk.addConnection(lineSplit[i - 1], lineSplit[i + 1])
 
-
-
         # Return the Machine object
         return nk
-
 
     def beginVdumpLab(self):
         pass
 
     def moveLabTerminal(self, termName, x, y):
-        os.system('xdotool search --name "' + termName + '"  windowactivate windowmove -- ' + str(x) + '  ' + str(y) + ' windowsize 100 50')
+        os.system('xdotool search --name "' + termName + '"  windowactivate windowmove -- ' + str(x) + '  ' + str(y) + ' windowsize 200 100')
+
 
     def probeLab(self):
         # Cleanup any old data

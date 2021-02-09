@@ -36,6 +36,15 @@ def addLabButtons(nlab):
     probeLabBtn = Button(base, text="Probe Lab", state=NORMAL, command=lambda: btnProbeLab(nlab), anchor=N)
     probeLabBtn.grid(row=1, column=4, columnspan=1)
 
+    dockTerminalsBtn = Button(base, text="Dock Terminals", state=NORMAL, command=lambda: btnDockTerms(nlab), anchor=N)
+    dockTerminalsBtn.grid(row=1, column=5, columnspan=1)
+
+    pinTerminalsBtn = Button(base, name="pinTerminalsBtn", text="Pin Terminals", state=NORMAL, command=lambda: btnPinTerms(nlab), anchor=N)
+    pinTerminalsBtn.grid(row=1, column=6, columnspan=1)
+
+    btnAnalysePackets = Button(base, text="Analyse Packets", state=NORMAL, command=lambda: btnAnalysePackets(nlab), anchor=N)
+    btnAnalysePackets.grid(row=1, column=7, columnspan=1)
+
     machineList["text"] = "Machines: " + ' '.join(nlab.machineList)
 
 
@@ -50,13 +59,36 @@ def btnStopLab(nlab):
 
 
 def btnProbeLab(nlab):
-    updateStatus(nlab.labDirectory + " Probing...!")
+    updateStatus(nlab.labDirectory + " Probing...")
     drawLab(nlab, nlab.probeLab())
 
+def btnDockTerms(nlab):
+    updateStatus(nlab.labDirectory + " Docking...")
+    for mach in canvasMachines:
+        nlab.moveLabTerminal(mach[1].machineName, labCanvas.coords(mach[0])[0], labCanvas.coords(mach[0])[1] + 50)
 
+def btnPinTerms(nlab):
+    updateStatus(nlab.labDirectory + " Pinning...")
+    btn = base.children["pinTerminalsBtn"]
+    if btn["text"] == "Pin Terminals":
+        btn["text"] = "Unpin Terminals"
+        # Thread to keep consoles locked
+        pin = threading.Thread(target=keepNConsolesFixed, args=(nlab, btn))
+        pin.start()
+    else:
+        btn["text"] = "Pin Terminals"
+
+def btnAnalysePackets(nlab):
+    updateStatus(nlab.labDirectory + " Analysing packets...")
+
+
+
+
+labCanvas = Canvas(base2, bg="gray", height=2000)
+canvasMachines = []
 def drawLab(nlab, macineData):
     # Create the Canvas for Writing
-    labCanvas = Canvas(base2, bg="gray", height=2000)
+
     labCanvas.pack(fill=BOTH, expand=True, anchor=N, side=TOP)
 
     # Get Bounds
@@ -90,7 +122,6 @@ def drawLab(nlab, macineData):
 
     # Try and place machines in a good order
     canvasLanes = []
-    canvasMachines = []
     canvasEths = []
     canvasLines = []
     canvasBoxes = []
@@ -188,7 +219,6 @@ def drawLab(nlab, macineData):
             #####canvasLines.append(labCanvas.create_line(qx, qy, machineCords[0], machineCords[1], fill="yellow"))
 
 
-
     for b in canvasBoxes:
         labCanvas.tag_raise(b)
 
@@ -201,16 +231,14 @@ def drawLab(nlab, macineData):
     for b in canvasMachines:
         labCanvas.tag_raise(b[0])
 
-    # Thread to keep consoles locked
-    pin = threading.Thread(target=keepNConsolesFixed, args=(nlab, macineData))
-    pin.start()
 
-
-def keepNConsolesFixed(nlab, machineData):
-    while True:
-        nlab.pinConsoleAtPoint("x", 0, 0)
-        print("Pinned...")
-        time.sleep(1)
+def keepNConsolesFixed(nlab, btn):
+    print("PIN STARTED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    while btn["text"] == "Unpin Terminals":
+        for mach in canvasMachines:
+            nlab.moveLabTerminal(mach[1].machineName, labCanvas.coords(mach[0])[0], labCanvas.coords(mach[0])[1] + 50)
+        time.sleep(.25)
+    print("PIN STOPPED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
 
 # Status bar -->-->-->-->-->-->-->-->-->-->
