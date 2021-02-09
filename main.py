@@ -63,12 +63,6 @@ def drawLab(nlab, macineData):
     boundW = base2.winfo_width()
     boundH = base2.winfo_height()
 
-    # 1. Get Lanes
-    # 2. Find Machines
-    # 3. Find crossover between machines and lanes
-    # 4. Sort machines into lanes
-    # 5. Draw...
-
     # Filter distinct lanes into list
     # Machine name, weight (todo?)
     lanes = []
@@ -99,11 +93,20 @@ def drawLab(nlab, macineData):
     canvasMachines = []
     canvasEths = []
     canvasLines = []
+    canvasBoxes = []
     wAvaliable = boundW - (boundW / len(lanes))
     xIncriment = wAvaliable / len(lanes)
     lanesDrawn = 1
     for lane in lanes:
-        canvasLanes.append((labCanvas.create_text(lanesDrawn * xIncriment, boundH / 2, fill="orange", text=lane.laneName), lane))
+        lane.x = lanesDrawn * xIncriment
+        lane.y = boundH / 2
+        canvasBoxes.append(labCanvas.create_rectangle(
+            lane.x - 30,
+            lane.y - 20,
+            lane.x + 30,
+            lane.y + 20, fill="gray", outline=""))
+        canvasLanes.append((labCanvas.create_text(lane.x, lane.y, fill="orange", text=lane.laneName), lane))
+        lane.calcualteAllAvaliablePoints()
         lanesDrawn = lanesDrawn + 1
 
     # Sort by machine weight
@@ -116,14 +119,22 @@ def drawLab(nlab, macineData):
     xIncriment =  wAvaliable / len(macineData)
     lanesDrawn = 1
     laneSwitch = 150
+    lnswch = True
     for mach in macineData:
+        canvasBoxes.append(labCanvas.create_rectangle(
+            (lanesDrawn * xIncriment) - 30,
+            (laneSwitch) - 20,
+            (lanesDrawn * xIncriment) + 30,
+            (laneSwitch) + 20, fill="gray", outline=""))
         canvasMachines.append(
-            (labCanvas.create_text(lanesDrawn * xIncriment, laneSwitch, fill="orange", text=mach.machineName), mach))
+            (labCanvas.create_text(lanesDrawn * xIncriment, laneSwitch, fill="#9ce036", text=mach.machineName), mach))
         lanesDrawn = lanesDrawn + 1
-        if laneSwitch == 150:
-            laneSwitch = boundH - 150
+        if True == lnswch:
+            laneSwitch = boundH - 150 + random.randrange(0, 100)
+            lnswch = False
         else:
-            laneSwitch = 150
+            laneSwitch = 150 - random.randrange(0, 100)
+            lnswch = True
 
         for con in mach.machineConnections:
 
@@ -141,96 +152,54 @@ def drawLab(nlab, macineData):
                     machineCords = labCanvas.coords(cmach[0])
                     break
 
-            x = ((laneCords[0] + machineCords[0])/2) + random.randrange(-20, 20)
-            y = ((laneCords[1] + machineCords[1])/2) + random.randrange(-20, 20)
+            #x = ((laneCords[0] + machineCords[0])/2) + random.randrange(-20, 20)
+            #y = ((laneCords[1] + machineCords[1])/2) + random.randrange(-20, 20)
             #canvasEths.append(labCanvas.create_text(x, y, fill="yellow", text=con[0] + " - " + mach.machineName))
             #canvasLines.append(labCanvas.create_line(laneCords[0], laneCords[1] ,machineCords[0], machineCords[1], fill="yellow"))
 
-            ox, oy = laneCords[0], laneCords[1]
-            px, py = laneCords[0] + 100, laneCords[1] + 100
+            #ox, oy = laneCords[0], laneCords[1]
+            #px, py = laneCords[0] + 100, laneCords[1] + 100
 
-            qx = ox + math.cos(math.radians((360 / currentLane.laneWeight) * currentLane.radiansUsed)) * (px - ox) - math.sin(math.radians((360 / currentLane.laneWeight) * currentLane.radiansUsed)) * (py - oy)
-            qy = oy + math.sin(math.radians((360 / currentLane.laneWeight) * currentLane.radiansUsed)) * (px - ox) + math.cos(math.radians((360 / currentLane.laneWeight) * currentLane.radiansUsed)) * (py - oy)
+            #qx = ox + math.cos(math.radians((360 / currentLane.laneWeight) * currentLane.radiansUsed)) * (px - ox) - math.sin(math.radians((360 / currentLane.laneWeight) * currentLane.radiansUsed)) * (py - oy)
+            #qy = oy + math.sin(math.radians((360 / currentLane.laneWeight) * currentLane.radiansUsed)) * (px - ox) + math.cos(math.radians((360 / currentLane.laneWeight) * currentLane.radiansUsed)) * (py - oy)
 
-            currentLane.radiansUsed = currentLane.radiansUsed + 1
+            #currentLane.radiansUsed = currentLane.radiansUsed + 1
 
             #ddd = canvEths.append(labCanvas.create_text(qx, qy, fill="yellow", text=con[0]))
-            canvasEths.append(labCanvas.create_text(qx, qy, fill="yellow", text=con[0] + " - " + mach.machineName))
+            ####canvasEths.append(labCanvas.create_text(qx, qy, fill="yellow", text=con[0] + " - " + mach.machineName))
+
+
+            dt = currentLane.getClosestAvaliablePoint(machineCords[0], machineCords[1])
+            curX = dt[0]
+            curY = dt[1]
+
+
+            canvasLines.append(
+                labCanvas.create_line(curX, curY, machineCords[0], machineCords[1], fill="yellow", stipple='gray50'))
+            canvasLines.append(
+                labCanvas.create_line(laneCords[0], laneCords[1], curX, curY, fill="orange", stipple='gray50'))
+            canvasBoxes.append(labCanvas.create_rectangle(
+                ((machineCords[0] + curX) / 2) - 20,
+                ((machineCords[1] + curY) / 2) - 15,
+                ((machineCords[0] + curX) / 2) + 20,
+                ((machineCords[1] + curY) / 2) + 15, fill="gray", outline=""))
+            canvasEths.append(labCanvas.create_text((machineCords[0] + curX)/2, (machineCords[1] + curY)/2, fill="yellow", text=con[0]))
             #labCanvas.create_line(linesDrawn * lineposXIncri, boundH / 2, qx, qy, fill="yellow")
-            canvasLines.append(labCanvas.create_line(qx, qy, machineCords[0], machineCords[1], fill="yellow"))
-            canvasLines.append(labCanvas.create_line(laneCords[0], laneCords[1], qx, qy, fill="orange"))
-
-            # use the radious/orbit method instead as this has collisions
-            # perhaps  make a two line system, one like the above code and the other using orbit
-            # draw lines between the three points
-            # find a way to group them to trace traffic
-            # Get netkit sitting on its name perminantly (maybe allow them to move it, but the name remains, when they click it they can redock/see o
-
-            # rotsComp = 0
-            # maxrots = 0
-            # for mach in macineData:
-            #    for con in mach.machineConnections:
-            #        if con[1] == line:
-            #            maxrots = maxrots + 1
-
-            # for mach in macineData:
-            #    for con in mach.machineConnections:
-            #        if con[1] == line:
-            #            ox, oy = linesDrawn * lineposXIncri, boundH / 2
-            #            px, py = linesDrawn * lineposXIncri + 100, (boundH / 2) + 100
-
-            #        qx = ox + math.cos(math.radians((360 / maxrots) * rotsComp)) * (px - ox) - math.sin(
-            #            math.radians((360 / maxrots) * rotsComp)) * (py - oy)
-            #        qy = oy + math.sin(math.radians((360 / maxrots) * rotsComp)) * (px - ox) + math.cos(
-            #            math.radians((360 / maxrots) * rotsComp)) * (py - oy)
-
-            #        ddd = canvEths.append(labCanvas.create_text(qx, qy, fill="yellow", text=con[0]))
-            #        labCanvas.create_line(linesDrawn * lineposXIncri, boundH / 2, qx, qy, fill="yellow")
-
-            #               nlab.moveLabTerminal(mach.machineName, qx, qy + 50)
-
-            #              rotsComp = rotsComp + 1
+            #####canvasLines.append(labCanvas.create_line(qx, qy, machineCords[0], machineCords[1], fill="yellow"))
 
 
 
+    for b in canvasBoxes:
+        labCanvas.tag_raise(b)
 
-    # Draw lines onto canvas
-    #canvLines = []
-    #canvEths = []
+    for b in canvasLanes:
+        labCanvas.tag_raise(b[0])
 
-    #boundW_open = boundW - (boundW / len(distinctLine))
-    #lineposXIncri = boundW_open / len(distinctLine)
-    #linesDrawn = 1
-    #for line in distinctLine:
-    #    canvLines.append(
-    #        (labCanvas.create_text(linesDrawn * lineposXIncri, boundH / 2, fill="orange", text=line), line))
+    for b in canvasEths:
+        labCanvas.tag_raise(b)
 
-        #rotsComp = 0
-        #maxrots = 0
-        #for mach in macineData:
-        #    for con in mach.machineConnections:
-        #        if con[1] == line:
-        #            maxrots = maxrots + 1
-
-        #for mach in macineData:
-        #    for con in mach.machineConnections:
-        #        if con[1] == line:
-        #            ox, oy = linesDrawn * lineposXIncri, boundH / 2
-        #            px, py = linesDrawn * lineposXIncri + 100, (boundH / 2) + 100
-
-            #        qx = ox + math.cos(math.radians((360 / maxrots) * rotsComp)) * (px - ox) - math.sin(
-            #            math.radians((360 / maxrots) * rotsComp)) * (py - oy)
-            #        qy = oy + math.sin(math.radians((360 / maxrots) * rotsComp)) * (px - ox) + math.cos(
-            #            math.radians((360 / maxrots) * rotsComp)) * (py - oy)
-
-            #        ddd = canvEths.append(labCanvas.create_text(qx, qy, fill="yellow", text=con[0]))
-            #        labCanvas.create_line(linesDrawn * lineposXIncri, boundH / 2, qx, qy, fill="yellow")
-
-     #               nlab.moveLabTerminal(mach.machineName, qx, qy + 50)
-
-      #              rotsComp = rotsComp + 1
-
-       # linesDrawn = linesDrawn + 1
+    for b in canvasMachines:
+        labCanvas.tag_raise(b[0])
 
     # Thread to keep consoles locked
     pin = threading.Thread(target=keepNConsolesFixed, args=(nlab, macineData))

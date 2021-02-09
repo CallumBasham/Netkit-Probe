@@ -1,6 +1,8 @@
 import os
 import subprocess
 import io
+import math
+import random
 
 class LaneData:
     def __init__(self, name):
@@ -9,6 +11,45 @@ class LaneData:
         self.laneMachines = []
         self.radiansUsed = 1
 
+        # Set in main.py
+        self.x = 0
+        self.y = 0
+        # Set by calcualteAllAvaliablePoints
+        self.avaliablePoints = []
+
+    def calcualteAllAvaliablePoints(self):
+        ox, oy = self.x, self.y
+        px, py = ox + 50, oy + 50
+        radianQuantity = 12
+        if self.laneWeight > 12:
+            radianQuantity = self.laneWeight
+        for i in range(0, radianQuantity, 1):
+            self.avaliablePoints.append((
+                    ox + math.cos(math.radians((360 / radianQuantity) * i)) * (px - ox) - math.sin(math.radians((360 / radianQuantity) * i)) * (py - oy),
+                    oy + math.sin(math.radians((360 / radianQuantity) * i)) * (px - ox) + math.cos(math.radians((360 / radianQuantity) * i)) * (py - oy),
+                    0
+            ))
+        # Below proves it does not care for anything but the smallest gird number
+        #self.avaliablePoints.append((25, 25))
+
+    def getClosestAvaliablePoint(self, _x, _y):
+
+        closest = 50000
+        point = None
+
+        for p in self.avaliablePoints:
+            pthag = math.sqrt(((_x - p[0]) ** 2) + ((_y - p[1]) ** 2))
+            if pthag < closest:
+                #if p[2] == 0:
+                point = list(p)
+                closest = pthag
+
+        #point[0] = point[0] + random.randrange(-40, 40)
+        #point[1] = point[1] + random.randrange(-40, 40)
+        return point
+
+    def getAllPoints(self):
+        return self.avaliablePoints
 
 
 
