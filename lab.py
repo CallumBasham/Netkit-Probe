@@ -3,6 +3,13 @@ import subprocess
 import io
 import math
 import random
+import fcntl as fcntl
+import select as select
+from scapy.all import *
+import pyshark
+from scapy.layers.inet import IP, TCP, ICMP, UDP
+from scapy.layers.l2 import ARP
+
 
 class LaneData:
     def __init__(self, name):
@@ -155,8 +162,101 @@ class NetkitLab:
 
         return self.machineData
 
-    def pinConsoleAtPoint(self, machineName, pointX, pointY):
-        pass
+    def beginVdump(self, lane):
+
+
+        ee = pyshark.FileCapture("/home/hex/NetkitLabs/CDP/ipsec/ee.cap")
+
+        packets = rdpcap("/home/hex/NetkitLabs/CDP/ipsec/ee.cap")
+
+        eeve = set((p[IP].src, p[IP].dst) for p in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap") if IP in p)
+
+
+        #mememe = set((p[IP]) for p in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap") if IP in p)
+
+        def expand(x):
+            yield x
+            while x.payload:
+                x = x.payload
+                yield x
+
+        for test in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap"):
+            original = test
+            if IP in test:
+                iptest = test[IP]
+            if TCP in test:
+                tcptest = test[TCP]
+            if UDP in test:
+                udptest = test[UDP]
+            if ICMP in test:
+                icmptest = test[ICMP]
+            if ARP in test:
+                arptest = test[ARP]
+            final = list(expand(test))
+            print("end")
+
+
+        print("BEGINNING VDUMP [" + lane + "]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane, stdout=subprocess.PIPE, shell=True, stderr=subprocess.PIPE, universal_newlines=False)
+
+        #PcapReader()
+
+        fd = proc.stdout.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+        streams = [proc.stdout]
+        temp0 = []
+        readable, writable, exceptional = select.select(streams, temp0, temp0, 120)
+        if len(readable) == 0:
+            raise Exception("Timeout of 2 minutes reached!")
+
+        temp = bytearray(4096)#bytearray(4096)
+        numberOfBytesRecieved = proc.stdout.readinto(temp)
+        if numberOfBytesRecieved <= 0:
+            raise Exception("No data recieved!")
+
+        for byte in temp:
+            print(byte & 1)
+
+        for byte in temp:
+            print(byte)
+
+        tst = []
+        for b in temp:
+            if len(tst) > 5:
+                if tst[len(tst) - 1] == 0 and tst[len(tst) - 2] == 0 and tst[len(tst) - 3] == 0 and tst[len(tst) - 4] == 0 and tst[len(tst) - 5] == 0:
+                    tst.append(b)
+            else:
+                tst.append(b)
+
+        bitlist = [byte & 1 for byte in temp]
+
+        f = open("/home/hex/NetkitLabs/CDP/ipsec/ee2-420.cap", "wb")
+        f.write(temp)
+        f.close()
+
+        #packets = rdpcap(temp)
+        packet = Packet(temp)
+        packet.show()
+        v = packet.name
+
+        final = list(expand(packet))
+
+
+        #packet.show_summary()
+
+
+
+        cap = pyshark.InMemCapture()
+        #cap.parse_packets([byte for byte in temp])
+        cap.parse_packets([byte & 1 for byte in temp])
+
+        #cap.parse_packets(bitlist)
+        #cap.parse_packets()
+
+        var = ""
+
 
     # Constructor
     # Create a NetkitLab class based on a selected lab.conf File

@@ -42,8 +42,8 @@ def addLabButtons(nlab):
     pinTerminalsBtn = Button(base, name="pinTerminalsBtn", text="Pin Terminals", state=NORMAL, command=lambda: btnPinTerms(nlab), anchor=N)
     pinTerminalsBtn.grid(row=1, column=6, columnspan=1)
 
-    btnAnalysePackets = Button(base, text="Analyse Packets", state=NORMAL, command=lambda: btnAnalysePackets(nlab), anchor=N)
-    btnAnalysePackets.grid(row=1, column=7, columnspan=1)
+    btnTracePackets = Button(base, text="Analyse Packets", state=NORMAL, command=lambda: btnAnalysePackets(nlab), anchor=N)
+    btnTracePackets.grid(row=1, column=7, columnspan=1)
 
     machineList["text"] = "Machines: " + ' '.join(nlab.machineList)
 
@@ -80,12 +80,18 @@ def btnPinTerms(nlab):
 
 def btnAnalysePackets(nlab):
     updateStatus(nlab.labDirectory + " Analysing packets...")
+    nlab.beginVdump(canvasLanes[0][1].laneName)
+
 
 
 
 
 labCanvas = Canvas(base2, bg="gray", height=2000)
 canvasMachines = []
+canvasLanes = []
+canvasEths = []
+canvasLines = []
+canvasBoxes = []
 def drawLab(nlab, macineData):
     # Create the Canvas for Writing
 
@@ -121,10 +127,7 @@ def drawLab(nlab, macineData):
                     lane.laneMachines.append(mach.machineName)
 
     # Try and place machines in a good order
-    canvasLanes = []
-    canvasEths = []
-    canvasLines = []
-    canvasBoxes = []
+
     wAvaliable = boundW - (boundW / len(lanes))
     xIncriment = wAvaliable / len(lanes)
     lanesDrawn = 1
