@@ -58,6 +58,9 @@ class LaneData:
     def getAllPoints(self):
         return self.avaliablePoints
 
+    def getLaneWeight(self):
+        return self.laneWeight
+
 
 
 class MachineData:
@@ -153,74 +156,80 @@ class NetkitLab:
                 self.machineData.append(self.getMachineInfo(line))
         return self.machineData
 
+
+    def expandPacket(self, x):
+        yield x
+        while x.payload:
+            x = x.payload
+            yield x
+
     def beginVdump(self, lane):
 
-        print("BEGINNING VDUMP [" + lane + "]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane + " >> " + lane + "-out-dump-NK-Probe.pcap", shell=True)
 
-        #time.sleep(30)
+        time.sleep(5)
 
-        def expand(x):
-            yield x
-            while x.payload:
-                x = x.payload
-                yield x
-
+        while os.stat("/home/hex/NetkitLabs/CDP/ipsec/" + lane + "-out-dump-NK-Probe.pcap").st_size == 0:
+            time.sleep(1)
 
         bufferReadPcap = PcapReader("/home/hex/NetkitLabs/CDP/ipsec/" + lane + "-out-dump-NK-Probe.pcap")
 
         def follow(fl):
-
             while True:
                 pack = fl.next()
-
                 if not pack:
-                    time.sleep(0.1)
+                    time.sleep(0.25)
                     continue
-
                 yield pack
-
 
         capData = follow(bufferReadPcap)
 
-        for packer in dildo:
-            #if IP in test:
-            # iptest = test[IP]
-            #    if TCP in test:
-            #        tcptest = test[TCP]
-            packData = list(expand(packer))
-            print("A packet...")
-
-        #for pkt in dendit:
-        #    test = list(expand(pkt))
-        #    print("done so far...")
-
-        proc.kill()
 
 
-        #mememe = set((p[IP]) for p in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap") if IP in p)
+        #for p in capData:
+        #    p = list(self.expandPacket(p))
+        #    print("Done")
 
+        #for packer in dildo:
+        #    # if IP in test:
+        #    # iptest = test[IP]
+        #    #    if TCP in test:
+        #    #        tcptest = test[TCP]
+        #    packData = list(expand(packer))
+        #    print("A packet...")#
+
+            # for pkt in dendit:
+            #    test = list(expand(pkt))
+            #    print("done so far...")
+
+     #   proc.kill()
+
+        # mememe = set((p[IP]) for p in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap") if IP in p)
 
         # Old Code which reads the VDUMP directly from stdout pipe of the terminal - retired as its too difficult to separate/detect packets
-        #proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane, stdout=subprocess.PIPE, shell=True, stderr=subprocess.PIPE, universal_newlines=False)
+        # proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane, stdout=subprocess.PIPE, shell=True, stderr=subprocess.PIPE, universal_newlines=False)
 
         # Make the read a non-block
-        #fd = proc.stdout.fileno()
-        #fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        #fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        # fd = proc.stdout.fileno()
+        # fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        # fcntl.fcntl(fd, fcntl.F_SETFL, fl |        ree = pck os.O_NONBLOCK)
 
         # Select means wait until data arrives
-        #streams = [proc.stdout]
-        #temp0 = []
-        #readable, writable, exceptional = select.select(streams, temp0, temp0, 120)
-        #if len(readable) == 0:
+        # streams = [proc.stdout]
+        # temp0 = []
+        # readable, writable, exceptional = select.select(streams, temp0, temp0, 120)
+        # if len(readable) == 0:
         #    raise Exception("Timeout of 2 minutes reached!")
 
         # Read the data into temp [bytearray]
-        #temp = bytearray(4096)#bytearray(4096)
-        #numberOfBytesRecieved = proc.stdout.readinto(temp)
-        #if numberOfBytesRecieved <= 0:
+        # temp = bytearray(4096)#bytearray(4096)
+        # numberOfBytesRecieved = proc.stdout.readinto(temp)
+        # if numberOfBytesRecieved <= 0:
         #    raise Exception("No data recieved!")
+
+        return proc, capData
+
+
 
 
     # Constructor

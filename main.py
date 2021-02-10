@@ -80,7 +80,15 @@ def btnPinTerms(nlab):
 
 def btnAnalysePackets(nlab):
     updateStatus(nlab.labDirectory + " Analysing packets...")
-    nlab.beginVdump(canvasLanes[0][1].laneName)
+
+    laneProc, stackReader = nlab.beginVdump(canvasLanes[0][1].laneName)
+
+    for pck in stackReader:
+        expPck = list(nlab.expandPacket(pck))
+        print("Done G")
+
+    laneProc.kill()
+
 
 
 
@@ -131,6 +139,22 @@ def drawLab(nlab, macineData):
     wAvaliable = boundW - (boundW / len(lanes))
     xIncriment = wAvaliable / len(lanes)
     lanesDrawn = 1
+
+    #lanes = lanes[len(lanes)%2::2] + lanes[::-2]
+
+    #def sortByWeight(e):
+    #    return e.getLaneWeight()
+
+    # Inspired by ...
+    #newList = []
+    #lanes.sort(key=sortByWeight)
+    #newList = lanes[:len(lanes) // 2]
+
+    #newnewlist = lanes[:len(lanes)/2] + list(reversed(lanes[len(lanes)/2:]))
+
+    #lanes.sort(key=sortByWeight, reverse=True)
+    #newList = newList + lanes[:len(lanes) // 2]
+
     for lane in lanes:
         lane.x = lanesDrawn * xIncriment
         lane.y = boundH / 2
