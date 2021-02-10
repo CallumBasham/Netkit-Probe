@@ -147,32 +147,18 @@ class NetkitLab:
     def probeLab(self):
         # Cleanup any old data
         self.machineData = []
-
-        #wid = 10
-        #for i in self.machineList:
-         #   os.system('xdotool search --name "' + i + '"  windowactivate windowmove -- ' + str(
-         #       wid) + '  300 windowsize 450 450 type " ping localhost "')
-         #   os.system('xdotool search --name "' + i + '" windowactivate key Return')
-         #   wid = wid + 100
-
         proc = subprocess.Popen("cd " + self.labDirectory + " && vlist", stdout=subprocess.PIPE, shell=True)
         for line in io.TextIOWrapper(proc.stdout, encoding="utf-8"):
             if "@" in line and len(line) > 5:
                 self.machineData.append(self.getMachineInfo(line))
-
         return self.machineData
 
     def beginVdump(self, lane):
 
+        print("BEGINNING VDUMP [" + lane + "]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane + " >> " + lane + "-out-dump-NK-Probe.pcap", shell=True)
 
-        ee = pyshark.FileCapture("/home/hex/NetkitLabs/CDP/ipsec/ee.cap")
-
-        packets = rdpcap("/home/hex/NetkitLabs/CDP/ipsec/ee.cap")
-
-        eeve = set((p[IP].src, p[IP].dst) for p in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap") if IP in p)
-
-
-        #mememe = set((p[IP]) for p in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap") if IP in p)
+        #time.sleep(30)
 
         def expand(x):
             yield x
@@ -180,82 +166,61 @@ class NetkitLab:
                 x = x.payload
                 yield x
 
-        for test in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap"):
-            original = test
-            if IP in test:
-                iptest = test[IP]
-            if TCP in test:
-                tcptest = test[TCP]
-            if UDP in test:
-                udptest = test[UDP]
-            if ICMP in test:
-                icmptest = test[ICMP]
-            if ARP in test:
-                arptest = test[ARP]
-            final = list(expand(test))
-            print("end")
+
+        bufferReadPcap = PcapReader("/home/hex/NetkitLabs/CDP/ipsec/" + lane + "-out-dump-NK-Probe.pcap")
+
+        def follow(fl):
+
+            while True:
+                pack = fl.next()
+
+                if not pack:
+                    time.sleep(0.1)
+                    continue
+
+                yield pack
 
 
-        print("BEGINNING VDUMP [" + lane + "]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane, stdout=subprocess.PIPE, shell=True, stderr=subprocess.PIPE, universal_newlines=False)
+        capData = follow(bufferReadPcap)
 
-        #PcapReader()
+        for packer in dildo:
+            #if IP in test:
+            # iptest = test[IP]
+            #    if TCP in test:
+            #        tcptest = test[TCP]
+            packData = list(expand(packer))
+            print("A packet...")
 
-        fd = proc.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        #for pkt in dendit:
+        #    test = list(expand(pkt))
+        #    print("done so far...")
 
-        streams = [proc.stdout]
-        temp0 = []
-        readable, writable, exceptional = select.select(streams, temp0, temp0, 120)
-        if len(readable) == 0:
-            raise Exception("Timeout of 2 minutes reached!")
-
-        temp = bytearray(4096)#bytearray(4096)
-        numberOfBytesRecieved = proc.stdout.readinto(temp)
-        if numberOfBytesRecieved <= 0:
-            raise Exception("No data recieved!")
-
-        for byte in temp:
-            print(byte & 1)
-
-        for byte in temp:
-            print(byte)
-
-        tst = []
-        for b in temp:
-            if len(tst) > 5:
-                if tst[len(tst) - 1] == 0 and tst[len(tst) - 2] == 0 and tst[len(tst) - 3] == 0 and tst[len(tst) - 4] == 0 and tst[len(tst) - 5] == 0:
-                    tst.append(b)
-            else:
-                tst.append(b)
-
-        bitlist = [byte & 1 for byte in temp]
-
-        f = open("/home/hex/NetkitLabs/CDP/ipsec/ee2-420.cap", "wb")
-        f.write(temp)
-        f.close()
-
-        #packets = rdpcap(temp)
-        packet = Packet(temp)
-        packet.show()
-        v = packet.name
-
-        final = list(expand(packet))
+        proc.kill()
 
 
-        #packet.show_summary()
+        #mememe = set((p[IP]) for p in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap") if IP in p)
 
 
+        # Old Code which reads the VDUMP directly from stdout pipe of the terminal - retired as its too difficult to separate/detect packets
+        #proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane, stdout=subprocess.PIPE, shell=True, stderr=subprocess.PIPE, universal_newlines=False)
 
-        cap = pyshark.InMemCapture()
-        #cap.parse_packets([byte for byte in temp])
-        cap.parse_packets([byte & 1 for byte in temp])
+        # Make the read a non-block
+        #fd = proc.stdout.fileno()
+        #fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        #fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
-        #cap.parse_packets(bitlist)
-        #cap.parse_packets()
+        # Select means wait until data arrives
+        #streams = [proc.stdout]
+        #temp0 = []
+        #readable, writable, exceptional = select.select(streams, temp0, temp0, 120)
+        #if len(readable) == 0:
+        #    raise Exception("Timeout of 2 minutes reached!")
 
-        var = ""
+        # Read the data into temp [bytearray]
+        #temp = bytearray(4096)#bytearray(4096)
+        #numberOfBytesRecieved = proc.stdout.readinto(temp)
+        #if numberOfBytesRecieved <= 0:
+        #    raise Exception("No data recieved!")
 
 
     # Constructor
