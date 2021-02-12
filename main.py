@@ -42,7 +42,7 @@ def addLabButtons(nlab):
     pinTerminalsBtn = Button(base, name="pinTerminalsBtn", text="Pin Terminals", state=NORMAL, command=lambda: btnPinTerms(nlab), anchor=N)
     pinTerminalsBtn.grid(row=1, column=6, columnspan=1)
 
-    btnTracePackets = Button(base, text="Analyse Packets", state=NORMAL, command=lambda: btnAnalysePackets(nlab), anchor=N)
+    btnTracePackets = Button(base, name="btnTracePackets", text="Analyse Packets", state=NORMAL, command=lambda: btnAnalysePackets(nlab), anchor=N)
     btnTracePackets.grid(row=1, column=7, columnspan=1)
 
     machineList["text"] = "Machines: " + ' '.join(nlab.machineList)
@@ -78,21 +78,40 @@ def btnPinTerms(nlab):
     else:
         btn["text"] = "Pin Terminals"
 
+listAnalysisThreads = []
 def btnAnalysePackets(nlab):
     updateStatus(nlab.labDirectory + " Analysing packets...")
+    btn = base.children["btnTracePackets"]
 
-    laneProc, stackReader = nlab.beginVdump(canvasLanes[0][1].laneName)
+    if btn["text"] == "Analyse Packets":
+        btn["text"] = "Stop Analysing"
+
+        for lane in canvasLanes:
+            #if lane[1].laneName == "ispB": # TODO - Remove this, for testing only
+            listAnalysisThreads.append(threading.Thread(target=spawnPacketAnalysis, args=(nlab, lane[1].laneName)))
+
+        for thread in listAnalysisThreads:
+            thread.start()
+
+    else:
+        btn["text"] = "Analyse Packets"
+        for thread in listAnalysisThreads:
+            thread.stop()
+
+        listAnalysisThreads.clear()
+
+def spawnPacketAnalysis(nlab, lane):
+    laneProc, stackReader = nlab.beginVdump(lane)
 
     for pck in stackReader:
         expPck = list(nlab.expandPacket(pck))
-        print("Done G")
-
-    laneProc.kill()
-
-
-
-
-
+        if len(expPck) > 1:
+            if expPck[1].name == "IP":
+                print(lane + " -> PACKET READ: " + expPck[0].name + ": " + expPck[1].name + ": " + expPck[0].src + " -> " + expPck[0].dst + " ..=.." + expPck[1].src + " -> " + expPck[1].dst)
+            elif expPck[1].name == "ARP":
+                print(lane + " -> PACKET READ: " + expPck[0].name + ": " + expPck[1].name + ": " + expPck[0].src + " -> " + expPck[0].dst)
+        else:
+            print("wtf bro")
 
 labCanvas = Canvas(base2, bg="gray", height=2000)
 canvasMachines = []
@@ -154,6 +173,8 @@ def drawLab(nlab, macineData):
 
     #lanes.sort(key=sortByWeight, reverse=True)
     #newList = newList + lanes[:len(lanes) // 2]
+
+
 
     for lane in lanes:
         lane.x = lanesDrawn * xIncriment

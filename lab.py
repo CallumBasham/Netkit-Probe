@@ -167,42 +167,35 @@ class NetkitLab:
 
         proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane + " >> " + lane + "-out-dump-NK-Probe.pcap", shell=True)
 
-        time.sleep(5)
+        time.sleep(2)
 
         while os.stat("/home/hex/NetkitLabs/CDP/ipsec/" + lane + "-out-dump-NK-Probe.pcap").st_size == 0:
-            time.sleep(1)
+            time.sleep(5)
+            print(lane + " -> No PCAP data yet...")
 
         bufferReadPcap = PcapReader("/home/hex/NetkitLabs/CDP/ipsec/" + lane + "-out-dump-NK-Probe.pcap")
 
         def follow(fl):
             while True:
-                pack = fl.next()
-                if not pack:
-                    time.sleep(0.25)
+                try:
+                    time.sleep(.5)
+                    pack = fl.next()
+                except:
+                    print(lane + " -> No PACKET data yet...")
+                    pack = None
+                if not pack or pack == None:
+                    time.sleep(5)
                     continue
                 yield pack
 
         capData = follow(bufferReadPcap)
 
-
-
-        #for p in capData:
-        #    p = list(self.expandPacket(p))
-        #    print("Done")
-
-        #for packer in dildo:
+        # region Outdated_Old_Useful_Code
         #    # if IP in test:
         #    # iptest = test[IP]
         #    #    if TCP in test:
         #    #        tcptest = test[TCP]
-        #    packData = list(expand(packer))
-        #    print("A packet...")#
 
-            # for pkt in dendit:
-            #    test = list(expand(pkt))
-            #    print("done so far...")
-
-     #   proc.kill()
 
         # mememe = set((p[IP]) for p in PcapReader("/home/hex/NetkitLabs/CDP/ipsec/ee2.cap") if IP in p)
 
@@ -226,6 +219,7 @@ class NetkitLab:
         # numberOfBytesRecieved = proc.stdout.readinto(temp)
         # if numberOfBytesRecieved <= 0:
         #    raise Exception("No data recieved!")
+        # endregion
 
         return proc, capData
 
