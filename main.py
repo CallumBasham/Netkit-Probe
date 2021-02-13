@@ -45,12 +45,20 @@ def addLabButtons(nlab):
     btnTracePackets = Button(base, name="btnTracePackets", text="Analyse Packets", state=NORMAL, command=lambda: btnAnalysePackets(nlab), anchor=N)
     btnTracePackets.grid(row=1, column=7, columnspan=1)
 
+    btnShowAddressing = Button(base, name="btnShowAddressing", text="Show Addresses", state=NORMAL, command=lambda: btnShowAddress(nlab), anchor=N)
+    btnShowAddressing.grid(row=1, column=8, columnspan=1)
+
     machineList["text"] = "Machines: " + ' '.join(nlab.machineList)
 
 
 def btnStartLab(nlab):
     nlab.startLab()
     updateStatus(nlab.labDirectory + " Lab ready!")
+
+
+def btnShowAddress(nlab):
+    canvasEths = []
+
 
 
 def btnStopLab(nlab):
@@ -108,20 +116,104 @@ def spawnPacketAnalysis(nlab, lane):
         if len(expPck) > 1:
             if expPck[1].name == "IP":
                 print(lane + " -> PACKET READ: " + expPck[0].name + ": " + expPck[1].name + ": " + expPck[0].src + " -> " + expPck[0].dst + " ..=.." + expPck[1].src + " -> " + expPck[1].dst)
+
+                for mach in canvasMachines:
+                    for con in mach[1].machineConnections:
+                        if con[3].find("/") != -1:
+                            if con[3][0: con[3].index("/"): 1] == expPck[1].src:
+                                pin = threading.Thread(target=chasePacket, args=(expPck, mach, con))
+                                pin.start()
+                        else:
+                            if con[3] == expPck[1].src:
+                                pin = threading.Thread(target=chasePacket, args=(expPck, mach, con))
+                                pin.start()
+
+
             elif expPck[1].name == "ARP":
                 print(lane + " -> PACKET READ: " + expPck[0].name + ": " + expPck[1].name + ": " + expPck[0].src + " -> " + expPck[0].dst)
         else:
             print("wtf bro")
+        time.sleep(.3)
+
+def chasePacket(packet, srcMachine, connection):
+
+    dstMachine = None
+    for mach in canvasMachines:
+        for con in mach[1].machineConnections:
+            if con[3].find("/") != -1:
+                if con[3][0: con[3].index("/"): 1] == packet[1].dst:
+                    dstMachine = mach
+            else:
+                if con[3] == packet[1].src:
+                    dstMachine = mach
+
+    scords = labCanvas.coords(srcMachine[0])
+    s = labCanvas.create_text(scords[0] + 35, scords[1] + random.randrange(-30, 30), fill="blue", text=packet[1].name)
+
+    dcords = labCanvas.coords(dstMachine[0])
+    d = labCanvas.create_text(scords[0] - 35, scords[1] + random.randrange(-30, 30), fill="red", text=packet[1].name)
+
+
+    for con in srcMachine[1].machineConnections:
+        if con[3].find("/") != -1:
+            if con[3][0: con[3].index("/"): 1] == packet[1].src:
+              for line in canvasLines:
+                  if line[2].machineName == srcMachine[1].machineName and line[1][3][0: line[1][3].index("/"): 1] == packet[1].src and line[1][1] == con[1] and line[1][0] == con[0]:
+                      orig = labCanvas.itemcget(line[0], "fill")
+                      labCanvas.itemconfig(line[0], fill="blue")
+                      pin = threading.Thread(target=returnState, args=(line[0], orig, .2))
+                      pin.start()
+
+
+        else:
+            if con[3] == packet[1].src:
+                print("not now...")
+
+    time.sleep(.1)
+
+    for con in dstMachine[1].machineConnections:
+        if con[3].find("/") != -1:
+            if con[3][0: con[3].index("/"): 1] == packet[1].dst:
+                for line in canvasLines:
+                    if line[2].machineName == dstMachine[1].machineName and line[1][3][0: line[1][3].index("/"): 1] == packet[1].dst and line[1][1] == con[1] and line[1][0] == con[0]:
+                        orig = labCanvas.itemcget(line[0], "fill")
+                        labCanvas.itemconfig(line[0], fill="red")
+                        pin = threading.Thread(target=returnState, args=(line[0], orig, .2))
+                        pin.start()
+
+
+        else:
+            if con[3] == packet[1].src:
+                print("not now...")
+
+
+    #for i in range(1, 20):
+    #    time.sleep(0.1)
+    #    scords = labCanvas.coords(s)
+    #    labCanvas.coords(s, scords[0] - 1, scords[1] - 1, scords[2] + 1, scords[3] + 1)#
+
+    #    dcords = labCanvas.coords(d)
+    #    labCanvas.coords(d, dcords[0] - 1, dcords[1] - 1, dcords[2] + 1, dcords[3] + 1)
+
+def returnState(obj, orig, times):
+    time.sleep(times)
+    labCanvas.itemconfig(obj, fill=orig)
+
+
 
 labCanvas = Canvas(base2, bg="gray", height=2000)
 canvasMachines = []
 canvasLanes = []
 canvasEths = []
+canvasAddrs = []
+addressesShown = False
 canvasLines = []
 canvasBoxes = []
+mcData = None
 def drawLab(nlab, macineData):
     # Create the Canvas for Writing
 
+    mcData = macineData
     labCanvas.pack(fill=BOTH, expand=True, anchor=N, side=TOP)
 
     # Get Bounds
@@ -199,6 +291,7 @@ def drawLab(nlab, macineData):
     lanesDrawn = 1
     laneSwitch = 150
     lnswch = True
+
     for mach in macineData:
         canvasBoxes.append(labCanvas.create_rectangle(
             (lanesDrawn * xIncriment) - 30,
@@ -207,6 +300,8 @@ def drawLab(nlab, macineData):
             (laneSwitch) + 20, fill="gray", outline=""))
         canvasMachines.append(
             (labCanvas.create_text(lanesDrawn * xIncriment, laneSwitch, fill="#9ce036", text=mach.machineName), mach))
+
+
         lanesDrawn = lanesDrawn + 1
         if True == lnswch:
             laneSwitch = boundH - 150 + random.randrange(0, 100)
@@ -215,8 +310,10 @@ def drawLab(nlab, macineData):
             laneSwitch = 150 - random.randrange(0, 100)
             lnswch = True
 
+        machConDone = 0
         for con in mach.machineConnections:
 
+            machConDone = machConDone + 1
             currentLane = None
             laneCords = 0
             for clane in canvasLanes:
@@ -254,15 +351,25 @@ def drawLab(nlab, macineData):
 
 
             canvasLines.append(
-                labCanvas.create_line(curX, curY, machineCords[0], machineCords[1], fill="yellow", stipple='gray50'))
+                (labCanvas.create_line(curX, curY, machineCords[0], machineCords[1], fill="yellow", stipple='gray50'), con, mach))
             canvasLines.append(
-                labCanvas.create_line(laneCords[0], laneCords[1], curX, curY, fill="orange", stipple='gray50'))
+                (labCanvas.create_line(laneCords[0], laneCords[1], curX, curY, fill="orange"), con, mach))
             canvasBoxes.append(labCanvas.create_rectangle(
                 ((machineCords[0] + curX) / 2) - 20,
                 ((machineCords[1] + curY) / 2) - 15,
                 ((machineCords[0] + curX) / 2) + 20,
                 ((machineCords[1] + curY) / 2) + 15, fill="gray", outline=""))
-            canvasEths.append(labCanvas.create_text((machineCords[0] + curX)/2, (machineCords[1] + curY)/2, fill="yellow", text=con[0]))
+            canvasEths.append((labCanvas.create_text((machineCords[0] + curX)/2, (machineCords[1] + curY)/2, fill="yellow", text=con[0]), con))
+
+            if len(mach.machineConnections) == 1:
+                canvasAddrs.append((labCanvas.create_text((machineCords[0] + (machineCords[0] + (machineCords[0] + curX)/2) /2) / 2, (machineCords[1] + (machineCords[1] + (machineCords[1] + curY)/2) / 2) / 2, fill="lightgray", font="Times 10 italic bold", text=con[2] + "\n" + con[3]), con ))
+            elif len(mach.machineConnections) >= 2:
+                if lnswch == False:
+                    canvasAddrs.append((labCanvas.create_text(((machineCords[0] + (machineCords[0] + (machineCords[0] + curX) / 2) / 2) / 2),((machineCords[1] + (machineCords[1] + (machineCords[1] + curY) / 2) / 2) / 2) + (machConDone * 15), fill="lightgray", font="Times 10 italic bold", text=con[2] + "\n" + con[3]), con))
+                else:
+                    canvasAddrs.append((labCanvas.create_text(((machineCords[0] + (machineCords[0] + (machineCords[0] + curX) / 2) / 2) / 2),((machineCords[1] + (machineCords[1] + (machineCords[1] + curY) / 2) / 2) / 2) - (machConDone * 15), fill="lightgray", font="Times 10 italic bold",text=con[2] + "\n" + con[3]), con))
+
+                machConDone = machConDone + 1
             #labCanvas.create_line(linesDrawn * lineposXIncri, boundH / 2, qx, qy, fill="yellow")
             #####canvasLines.append(labCanvas.create_line(qx, qy, machineCords[0], machineCords[1], fill="yellow"))
 
@@ -274,7 +381,7 @@ def drawLab(nlab, macineData):
         labCanvas.tag_raise(b[0])
 
     for b in canvasEths:
-        labCanvas.tag_raise(b)
+        labCanvas.tag_raise(b[0])
 
     for b in canvasMachines:
         labCanvas.tag_raise(b[0])

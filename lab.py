@@ -70,8 +70,8 @@ class MachineData:
         self.machineConnections = []
 
     # Append a new connection
-    def addConnection(self, ethDev, wireName):
-        self.machineConnections.append((ethDev, wireName))
+    def addConnection(self, ethDev, wireName, macAddr, ipAddr):
+        self.machineConnections.append((ethDev, wireName, macAddr, ipAddr))
 
     # Info dump to stdout
     def printMachineData(self):
@@ -135,7 +135,40 @@ class NetkitLab:
         # Browse the string for the Machines networking data
         for i in range(0, len(lineSplit), 1):
             if lineSplit[i] == "@":
-                nk.addConnection(lineSplit[i - 1], lineSplit[i + 1])
+
+                with open(self.labDirectory + "/" + nk.machineName + ".startup") as f:
+                    content = f.readlines()
+                content = [x.strip() for x in content]
+
+                mac, ip = "?", "?"
+
+                for line in content:
+                    # If this is an ifconfig command
+                    if line.find("ifconfig", 0) != -1:
+                        # If the line is not commented out
+                        if line.find("#", 0, line.find("ifconfig", 0) + 1) == -1:
+                            # If the line contains the current ethernet port
+                            if line.find(lineSplit[i - 1]) != -1:
+                                # This contains the MAC address
+                                if line.find(":", line.find("ifconfig", 0)) != -1:
+                                    mac = line[
+                                          line.index("ether ") + len("ether "):
+                                          line.index("ether ") + len("ether ") + 17:
+                                          1
+                                          ]
+                                # This contains the IP address
+                                elif line.find(".", line.find("ifconfig", 0)) != -1:
+                                    ip = line[
+                                         line.index(lineSplit[i - 1] + " ") + len(lineSplit[i - 1] + " "):
+                                         line.index(lineSplit[i - 1] + " ") + len(lineSplit[i - 1] + " ") + len(line) - line.index(lineSplit[i - 1] + " ") + len(lineSplit[i - 1] + " "):
+                                         1
+                                         ].replace(" ", "")
+
+
+
+
+                nk.addConnection(lineSplit[i - 1], lineSplit[i + 1], mac, ip)
+
 
         # Return the Machine object
         return nk
