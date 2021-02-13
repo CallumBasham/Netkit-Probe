@@ -104,7 +104,7 @@ def btnAnalysePackets(nlab):
     else:
         btn["text"] = "Analyse Packets"
         for thread in listAnalysisThreads:
-            thread.stop()
+            thread.kill()
 
         listAnalysisThreads.clear()
 
@@ -133,7 +133,7 @@ def spawnPacketAnalysis(nlab, lane):
                 print(lane + " -> PACKET READ: " + expPck[0].name + ": " + expPck[1].name + ": " + expPck[0].src + " -> " + expPck[0].dst)
         else:
             print("wtf bro")
-        time.sleep(.3)
+        time.sleep(.2)
 
 def chasePacket(packet, srcMachine, connection):
 
@@ -147,11 +147,26 @@ def chasePacket(packet, srcMachine, connection):
                 if con[3] == packet[1].src:
                     dstMachine = mach
 
+
+    textDis = "N/A"
+
+    if packet[2].name:
+        textDis = packet[2].name
+    elif packet[1].name:
+        textDis = packet[1].name
+    elif packet[0].name:
+        textDis = packet[0].name
+
+
     scords = labCanvas.coords(srcMachine[0])
-    s = labCanvas.create_text(scords[0] + 35, scords[1] + random.randrange(-30, 30), fill="blue", text=packet[1].name)
+    s = labCanvas.create_text(scords[0] + 35, scords[1] + random.randrange(-30, 30), fill="blue", text=textDis)
+    sdeb = threading.Thread(target=debris, args=(s, 4))
+    sdeb.start()
 
     dcords = labCanvas.coords(dstMachine[0])
-    d = labCanvas.create_text(scords[0] - 35, scords[1] + random.randrange(-30, 30), fill="red", text=packet[1].name)
+    d = labCanvas.create_text(dcords[0] - 35, dcords[1] + random.randrange(-30, 30), fill="red", text=textDis)
+    ddeb = threading.Thread(target=debris, args=(d, 4))
+    ddeb.start()
 
 
     for con in srcMachine[1].machineConnections:
@@ -161,7 +176,7 @@ def chasePacket(packet, srcMachine, connection):
                   if line[2].machineName == srcMachine[1].machineName and line[1][3][0: line[1][3].index("/"): 1] == packet[1].src and line[1][1] == con[1] and line[1][0] == con[0]:
                       orig = labCanvas.itemcget(line[0], "fill")
                       labCanvas.itemconfig(line[0], fill="blue")
-                      pin = threading.Thread(target=returnState, args=(line[0], orig, .2))
+                      pin = threading.Thread(target=returnState, args=(line[0], orig, .1))
                       pin.start()
 
 
@@ -178,7 +193,7 @@ def chasePacket(packet, srcMachine, connection):
                     if line[2].machineName == dstMachine[1].machineName and line[1][3][0: line[1][3].index("/"): 1] == packet[1].dst and line[1][1] == con[1] and line[1][0] == con[0]:
                         orig = labCanvas.itemcget(line[0], "fill")
                         labCanvas.itemconfig(line[0], fill="red")
-                        pin = threading.Thread(target=returnState, args=(line[0], orig, .2))
+                        pin = threading.Thread(target=returnState, args=(line[0], orig, .1))
                         pin.start()
 
 
@@ -198,6 +213,10 @@ def chasePacket(packet, srcMachine, connection):
 def returnState(obj, orig, times):
     time.sleep(times)
     labCanvas.itemconfig(obj, fill=orig)
+
+def debris(obj, times):
+    time.sleep(times)
+    labCanvas.delete(obj)
 
 
 

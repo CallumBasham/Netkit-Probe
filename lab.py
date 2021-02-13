@@ -198,26 +198,29 @@ class NetkitLab:
 
     def beginVdump(self, lane):
 
+        try:
+            os.remove(self.labDirectory + "/" + lane + "-out-dump-NK-Probe.pcap")
+        except:
+            pass
+
         proc = subprocess.Popen("cd " + self.labDirectory + " && vdump " + lane + " >> " + lane + "-out-dump-NK-Probe.pcap", shell=True)
 
-        time.sleep(2)
+        time.sleep(1)
 
-        while os.stat("/home/hex/NetkitLabs/CDP/ipsec/" + lane + "-out-dump-NK-Probe.pcap").st_size == 0:
-            time.sleep(5)
-            print(lane + " -> No PCAP data yet...")
+        while os.stat(self.labDirectory + "/" + lane + "-out-dump-NK-Probe.pcap").st_size == 0:
+            time.sleep(.05)
 
-        bufferReadPcap = PcapReader("/home/hex/NetkitLabs/CDP/ipsec/" + lane + "-out-dump-NK-Probe.pcap")
+        bufferReadPcap = PcapReader(self.labDirectory + "/" + lane + "-out-dump-NK-Probe.pcap")
 
         def follow(fl):
             while True:
                 try:
-                    time.sleep(.5)
+                    time.sleep(.01)
                     pack = fl.next()
                 except:
-                    print(lane + " -> No PACKET data yet...")
                     pack = None
                 if not pack or pack == None:
-                    time.sleep(5)
+                    time.sleep(.05)
                     continue
                 yield pack
 
