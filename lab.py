@@ -177,7 +177,12 @@ class NetkitLab:
         pass
 
     def moveLabTerminal(self, termName, x, y):
-        os.system('xdotool search --name "' + termName + '"  windowactivate windowmove -- ' + str(x) + '  ' + str(y) + ' windowsize 200 100')
+        os.system('xdotool search --name "' + termName + '"  windowactivate windowmove -- ' + str(x) + '  ' + str(y) + ' windowsize 300 150')
+
+    def pingCommand(self, termName, pingMachine):
+        os.system('xdotool search --name "' + termName + '"  windowactivate key Return')
+        os.system('xdotool search --name "' + termName + '"  windowactivate type   "ping -c1 ' + pingMachine + ' "')
+        os.system('xdotool search --name "' + termName + '"  windowactivate key Return')
 
 
     def probeLab(self):
@@ -215,12 +220,11 @@ class NetkitLab:
         def follow(fl):
             while True:
                 try:
-                    time.sleep(.01)
                     pack = fl.next()
                 except:
                     pack = None
                 if not pack or pack == None:
-                    time.sleep(.05)
+                    time.sleep(.005)
                     continue
                 yield pack
 

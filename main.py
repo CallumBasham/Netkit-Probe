@@ -48,17 +48,42 @@ def addLabButtons(nlab):
     btnShowAddressing = Button(base, name="btnShowAddressing", text="Show Addresses", state=NORMAL, command=lambda: btnShowAddress(nlab), anchor=N)
     btnShowAddressing.grid(row=1, column=8, columnspan=1)
 
-    machineList["text"] = "Machines: " + ' '.join(nlab.machineList)
+    btnPingAll = Button(base, name="btnPingAll", text="Ping All", state=NORMAL,command=lambda: PingAll(nlab), anchor=N)
+    btnPingAll.grid(row=1, column=9, columnspan=1)
 
+    machineList["text"] = "Machines: " + str(len(nlab.machineList)) + " at: " + nlab.labDirectory #"#' '.join(nlab.machineList)
+
+def onClose(nlab):
+    nlab.stopLab()
 
 def btnStartLab(nlab):
     nlab.startLab()
     updateStatus(nlab.labDirectory + " Lab ready!")
+    root.protocol("WM_DELETE_WINDOW", lambda: onClose(nlab))
 
 
 def btnShowAddress(nlab):
-    canvasEths = []
+    pass
 
+def PingAll(nlab):
+    pin = threading.Thread(target=pingAllThread, args=(nlab, canvasMachines, labCanvas))
+    pin.start()
+
+
+def pingAllThread(nlab, canvasMachines, labCanvas):
+    for machSrc in canvasMachines:
+        for mach in canvasMachines:
+            nlab.moveLabTerminal(mach[1].machineName, -150, -75)
+        for machDst in canvasMachines:
+            if machDst[1].machineName != machSrc[1].machineName:
+                for con in machDst[1].machineConnections:
+                    if con[3].find("/") != -1:
+                        nlab.moveLabTerminal(machSrc[1].machineName, labCanvas.coords(machSrc[0])[0] + 150,
+                                             labCanvas.coords(machSrc[0])[1] + 50)
+                        nlab.pingCommand(machSrc[1].machineName, con[3][0: con[3].index("/"): 1])
+                    time.sleep(.005)
+                time.sleep(.75)
+            time.sleep(1.5)
 
 
 def btnStopLab(nlab):
@@ -92,8 +117,9 @@ def btnAnalysePackets(nlab):
     btn = base.children["btnTracePackets"]
 
     if btn["text"] == "Analyse Packets":
-        btn["text"] = "Stop Analysing"
+        btn["text"] = "Analysing..." # Removed the ability to stop analysis for the time being...
 
+        listAnalysisThreads = []
         for lane in canvasLanes:
             #if lane[1].laneName == "ispB": # TODO - Remove this, for testing only
             listAnalysisThreads.append(threading.Thread(target=spawnPacketAnalysis, args=(nlab, lane[1].laneName)))
@@ -103,10 +129,7 @@ def btnAnalysePackets(nlab):
 
     else:
         btn["text"] = "Analyse Packets"
-        for thread in listAnalysisThreads:
-            thread.kill()
 
-        listAnalysisThreads.clear()
 
 def spawnPacketAnalysis(nlab, lane):
     laneProc, stackReader = nlab.beginVdump(lane)
@@ -133,7 +156,7 @@ def spawnPacketAnalysis(nlab, lane):
                 print(lane + " -> PACKET READ: " + expPck[0].name + ": " + expPck[1].name + ": " + expPck[0].src + " -> " + expPck[0].dst)
         else:
             print("wtf bro")
-        time.sleep(.2)
+        time.sleep(.1)
 
 def chasePacket(packet, srcMachine, connection):
 
@@ -184,7 +207,7 @@ def chasePacket(packet, srcMachine, connection):
             if con[3] == packet[1].src:
                 print("not now...")
 
-    time.sleep(.1)
+    time.sleep(.05)
 
     for con in dstMachine[1].machineConnections:
         if con[3].find("/") != -1:
@@ -444,5 +467,9 @@ mainMenu.add_cascade(label="File", menu=fileMenu)
 fileMenu.add_command(label="Load Lab", command=lambda: selectLab())
 fileMenu.add_separator()
 fileMenu.add_command(label="Quit", command=root.quit)
+
+
+
+
 
 root.mainloop()
