@@ -177,7 +177,7 @@ class NetkitLab:
         pass
 
     def moveLabTerminal(self, termName, x, y):
-        os.system('xdotool search --name "' + termName + '"  windowactivate windowmove -- ' + str(x) + '  ' + str(y) + ' windowsize 300 150')
+        os.system('xdotool search --name "' + termName + '"  windowactivate windowmove -- ' + str(x) + '  ' + str(y) + ' windowsize 250 150')
 
     def pingCommand(self, termName, pingMachine):
         os.system('xdotool search --name "' + termName + '"  windowactivate key Return')

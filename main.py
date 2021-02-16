@@ -71,19 +71,22 @@ def PingAll(nlab):
 
 
 def pingAllThread(nlab, canvasMachines, labCanvas):
+    for mach in canvasMachines:
+        nlab.moveLabTerminal(mach[1].machineName, -150, -75)
+    prev = None
     for machSrc in canvasMachines:
-        for mach in canvasMachines:
-            nlab.moveLabTerminal(mach[1].machineName, -150, -75)
+        if prev is not None:
+            nlab.moveLabTerminal(prev, -150, -75)
+        nlab.moveLabTerminal(machSrc[1].machineName, labCanvas.coords(machSrc[0])[0] + 150, labCanvas.coords(machSrc[0])[1] + 50)
         for machDst in canvasMachines:
             if machDst[1].machineName != machSrc[1].machineName:
                 for con in machDst[1].machineConnections:
                     if con[3].find("/") != -1:
-                        nlab.moveLabTerminal(machSrc[1].machineName, labCanvas.coords(machSrc[0])[0] + 150,
-                                             labCanvas.coords(machSrc[0])[1] + 50)
                         nlab.pingCommand(machSrc[1].machineName, con[3][0: con[3].index("/"): 1])
-                    time.sleep(.005)
-                time.sleep(.75)
-            time.sleep(1.5)
+                    time.sleep(.001)
+                time.sleep(.35)
+            time.sleep(1.25)
+        prev = machSrc[1].machineName
 
 
 def btnStopLab(nlab):
